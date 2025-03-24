@@ -1,4 +1,4 @@
-from services.tarefa_services import cadastrar_tarefa
+from services.tarefa_services import cadastrar_tarefa, listar_tarefas
 import flet as ft
 from sqlalchemy.orm import sessionmaker
 from connection import Session
@@ -7,7 +7,7 @@ from models.tarefa_model import Tarefa  # Ajuste de import, caso o seu modelo es
 # Função para atualizar a lista de tarefas
 def atualizar_lista_tarefas(tarefas_column):
     # Criação de uma nova sessão para pegar as tarefas
-    session = Session()
+    session = sessionmaker()
     
     try:
         # Limpa a coluna de tarefas
@@ -50,3 +50,7 @@ def on_add_tarefa_click(e, descricao_input, situacao_input, result_text, tarefas
     
     # Atualiza o texto na tela
     result_text.update()
+
+def on_listar_tarefas_click(e, tarefas_column):
+    # Atualiza a lista de tarefas na tela
+    atualizar_lista_tarefas(tarefas_column)

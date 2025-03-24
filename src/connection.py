@@ -8,11 +8,11 @@ from models.tarefa_model import create_tables
 load_dotenv()
 
 class Config:
-    DB_USER = os.getenv('DB_USER', 'davibcs')  # Nome do usuário do banco
-    DB_PASS = os.getenv('DB_PASS', 'd2a0v0i8')  # Senha do banco
-    DB_HOST = os.getenv('DB_HOST', '127.0.0.1')  # Host do banco
-    DB_NAME = os.getenv('DB_NAME', 'db_todolistcrud')  # Nome do banco
-    DB_PORT = os.getenv('DB_PORT', '3306')  # Porta do banco
+    DB_USER = os.getenv('DB_USER', 'davibcs').strip()  # Nome do usuário do banco
+    DB_PASS = os.getenv('DB_PASS', 'd2a0v0i8').strip()  # Senha do banco
+    DB_HOST = os.getenv('DB_HOST', '127.0.0.1').strip()  # Host do banco
+    DB_NAME = os.getenv('DB_NAME', 'db_todolistcrud').strip()  # Nome do banco
+    DB_PORT = os.getenv('DB_PORT', '3306').strip()  # Porta do banco
     DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # Função para criar o engine do SQLAlchemy
@@ -26,8 +26,9 @@ def get_engine():
         raise
 
 # Função para configurar a sessão do SQLAlchemy
-def get_session(engine):
+def get_session():
     try:
+        engine = get_engine()
         Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
         print("Sessão configurada com sucesso.")
         return Session
