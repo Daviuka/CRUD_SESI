@@ -1,133 +1,101 @@
-import flet as ft
-from services.tarefa_services import cadastrar_tarefa, listar_tarefas, remover_tarefa
+from models.tarefa_model import Tarefa
+from sqlalchemy.exc import SQLAlchemyError
+from connection import get_session
 
-# Classe para representar uma tarefa com funcionalidade de edição e remoção
-class Task(ft.Row):
-    def __init__(self, tarefa_id, text, situacao, atualizar_lista):
-        super().__init__()
-        self.tarefa_id = tarefa_id
-        self.text_view = ft.Text(text)
-        self.text_edit = ft.TextField(value=text, visible=False)
-        self.checkbox = ft.Checkbox(value=situacao)
-        self.edit_button = ft.IconButton(icon=ft.icons.EDIT, on_click=self.edit)
-        self.save_button = ft.IconButton(
-            visible=False, icon=ft.icons.SAVE, on_click=self.save
-        )
-        self.delete_button = ft.IconButton(
-            icon=ft.icons.DELETE, on_click=self.delete_clicked
-        )
-        self.atualizar_lista = atualizar_lista
-        self.controls = [
-            self.checkbox,
-            self.text_view,
-            self.text_edit,
-            self.edit_button,
-            self.save_button,
-            self.delete_button,
-        ]
+# Função para cadastrar uma nova tarefa no banco de dados
+def cadastrar_tarefa(descricao: str, situacao: bool):
+    try:
+        # Criar uma nova instância do modelo Tarefa com os dados fornecidos
+        nova_tarefa = Tarefa(descricao=descricao, situacao=situacao)
+        Session = get_session()
+        with Session() as session:
+            # Adicionar a tarefa na sessão
+            session.add(nova_tarefa)
+            # Commit para salvar a tarefa no banco de dados
+            session.commit()
+            # Retorna o objeto Tarefa inserido
+            return nova_tarefa
+    except SQLAlchemyError as e:
+        # Exibe uma mensagem de erro caso ocorra algum problema
+        print(f"Erro ao cadastrar tarefa: {e}")
+        return None
 
-    def edit(self, e):
-        self.edit_button.visible = False
-        self.save_button.visible = True
-        self.text_view.visible = False
-        self.text_edit.visible = True
-        self.update()
+# Função para listar todas as tarefas do banco de dados
+def listar_tarefas():
+    try:
+        Session = get_session()
+        with Session() as session:
+            # Buscar todas as tarefas do banco de dados
+            tarefas = session.query(Tarefa).all()
+            return tarefas
+    except SQLAlchemyError as e:
+        # Exibe uma mensagem de erro caso ocorra algum problema
+        print(f"Erro ao listar tarefas: {e}")
+        return None
 
-    def save(self, e):
-        self.edit_button.visible = True
-        self.save_button.visible = False
-        self.text_view.visible = True
-        self.text_edit.visible = False
-        self.text_view.value = self.text_edit.value
-        # Aqui você pode chamar um serviço para atualizar a tarefa no banco de dados
-        # Exemplo: editar_tarefa(self.tarefa_id, self.text_edit.value, self.checkbox.value)
-        self.atualizar_lista()
-        self.update()
+# Função para listar uma tarefa específica por ID
+def listar_tarefa_por_id(tarefa_id: int):
+    try:
+        Session = get_session()
+        with Session() as session:
+            # Buscar a tarefa específica por ID no banco de dados
+            tarefa = session.query(Tarefa).filter(Tarefa.id == tarefa_id).first()
+            return tarefa
+    except SQLAlchemyError as e:
+        # Exibe uma mensagem de erro caso ocorra algum problema
+        print(f"Erro ao listar tarefa por ID: {e}")
+        return None
 
-    def delete_clicked(self, e):
-        # Chama o serviço para remover a tarefa
-        sucesso = remover_tarefa(self.tarefa_id)
-        if sucesso:
-            print(f"Tarefa {self.tarefa_id} removida com sucesso.")
-            self.atualizar_lista()
-        else:
-            print(f"Erro ao remover a tarefa {self.tarefa_id}.")
+# Função para editar uma tarefa existente no banco de dados
+def editar_tarefa(tarefa_id: int, descricao: str, situacao: bool):
+    try:
+        Session = get_session()
+        with Session() as session:
+            # Buscar a tarefa pelo ID
+            tarefa = session.query(Tarefa).filter(Tarefa.id == tarefa_id).first()
 
-def main(page: ft.Page):
-    page.title = "Cadastro de Tarefa"
-    page.scroll = 'adaptive'
-    page.padding = 20
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+            # Verifica se a tarefa existe
+            if tarefa:
+                # Atualizar os dados da tarefa
+                tarefa.descricao = descricao
+                tarefa.situacao = situacao
 
-    # Função para adicionar uma nova tarefa
-    def on_add_tarefa_click(e):
-        descricao = descricao_input.value.strip()
-        situacao = situacao_input.value
+                # Commit para salvar as alterações no banco de dados
+                session.commit()
 
-        if not descricao:
-            result_text.value = "A descrição da tarefa não pode estar vazia."
-            result_text.color = "red"
-            page.update()
-            return
+                # Retorna a tarefa editada
+                return tarefa
+            else:
+                # Exibe uma mensagem caso a tarefa não seja encontrada
+                print("Tarefa não encontrada")
+                return None
+    except SQLAlchemyError as e:
+        # Exibe uma mensagem de erro caso ocorra algum problema
+        print(f"Erro ao editar tarefa: {e}")
+        return None
 
-        # Chama o serviço para cadastrar a tarefa
-        nova_tarefa = cadastrar_tarefa(descricao, situacao)
-        if nova_tarefa:
-            result_text.value = "Tarefa cadastrada com sucesso!"
-            result_text.color = "green"
-            descricao_input.value = ""
-            situacao_input.value = False
-            atualizar_lista_tarefas()
-        else:
-            result_text.value = "Erro ao cadastrar a tarefa."
-            result_text.color = "red"
+# Função para remover uma tarefa do banco de dados
+def remover_tarefa(tarefa_id: int):
+    try:
+        Session = get_session()
+        with Session() as session:
+            # Buscar a tarefa pelo ID
+            tarefa = session.query(Tarefa).filter(Tarefa.id == tarefa_id).first()
 
-        page.update()
+            # Verifica se a tarefa existe
+            if tarefa:
+                # Remover a tarefa da sessão
+                session.delete(tarefa)
 
-    # Função para atualizar a lista de tarefas
-    def atualizar_lista_tarefas():
-        tarefas_column.controls.clear()
-        tarefas = listar_tarefas()
-        if tarefas:
-            for tarefa in tarefas:
-                tarefas_column.controls.append(
-                    Task(
-                        tarefa_id=tarefa.id,
-                        text=tarefa.descricao,
-                        situacao=tarefa.situacao,
-                        atualizar_lista=atualizar_lista_tarefas,
-                    )
-                )
-        else:
-            tarefas_column.controls.append(ft.Text("Nenhuma tarefa encontrada."))
-
-        page.update()
-
-    # Campo de entrada para a descrição da tarefa
-    descricao_input = ft.TextField(label="Descrição da Tarefa", autofocus=True, width=300)
-
-    # Campo de entrada para a situação (Checkbox)
-    situacao_input = ft.Checkbox(label="Tarefa concluída", value=False)
-
-    # Botão para adicionar a tarefa
-    add_button = ft.ElevatedButton("Cadastrar Tarefa", on_click=on_add_tarefa_click)
-
-    # Área de resultado (onde será mostrado se a tarefa foi cadastrada ou não)
-    result_text = ft.Text()
-
-    # Coluna para exibir a lista de tarefas
-    tarefas_column = ft.Column()
-
-    # Adiciona todos os componentes na página
-    page.add(
-        ft.Column([
-            descricao_input,
-            situacao_input,
-            add_button,
-            result_text,
-            tarefas_column
-        ])
-    )
-
-    # Inicializa a lista de tarefas
-    atualizar_lista_tarefas()
+                # Commit para salvar a remoção no banco de dados
+                session.commit()
+                print("Tarefa removida com sucesso")
+                return True
+            else:
+                # Exibe uma mensagem caso a tarefa não seja encontrada
+                print("Tarefa não encontrada")
+                return False
+    except SQLAlchemyError as e:
+        # Exibe uma mensagem de erro caso ocorra algum problema
+        print(f"Erro ao remover tarefa: {e}")
+        return False
