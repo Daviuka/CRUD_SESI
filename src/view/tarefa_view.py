@@ -1,13 +1,12 @@
-from services.tarefa_services import cadastrar_tarefa, listar_tarefas
+from services.tarefa_services import cadastrar_tarefa
 import flet as ft
-from sqlalchemy.orm import sessionmaker
 from connection import Session
 from models.tarefa_model import Tarefa  # Ajuste de import, caso o seu modelo esteja em models.py
 
 # Função para atualizar a lista de tarefas
 def atualizar_lista_tarefas(tarefas_column):
     # Criação de uma nova sessão para pegar as tarefas
-    session = sessionmaker()
+    session = Session()
     
     try:
         # Limpa a coluna de tarefas
@@ -21,6 +20,7 @@ def atualizar_lista_tarefas(tarefas_column):
             tarefas_column.controls.append(
                 ft.Row(
                     [
+                        # Exibe o ID, descrição e status (Concluída ou Não) de cada tarefa
                         ft.Text(f"ID: {tarefa.id} - Descrição: {tarefa.descricao} - Concluída: {'Sim' if tarefa.situacao else 'Não'}")
                     ]
                 )
@@ -34,23 +34,26 @@ def atualizar_lista_tarefas(tarefas_column):
         session.close()
 
 
+# Função para adicionar uma nova tarefa
 def on_add_tarefa_click(e, descricao_input, situacao_input, result_text, tarefas_column):
-    descricao = descricao_input.value
-    situacao = situacao_input.value
+    descricao = descricao_input.value  # Obtém o valor do campo de descrição
+    situacao = situacao_input.value  # Obtém o valor do checkbox (situação da tarefa)
     
     # Chama a função de cadastro da tarefa
     tarefa_cadastrada = cadastrar_tarefa(descricao, situacao)
     
-    if tarefa_cadastrada:
-        result_text.value = f"Tarefa cadastrada com sucesso! ID: {tarefa_cadastrada.id}"
+    if tarefa_cadastrada:  # Verifica se a tarefa foi cadastrada com sucesso
+        result_text.value = f"Tarefa cadastrada com sucesso! ID: {tarefa_cadastrada.id}"  # Mensagem de sucesso
         # Atualiza a lista de tarefas na tela
         atualizar_lista_tarefas(tarefas_column)
     else:
-        result_text.value = "Erro ao cadastrar a tarefa."
+        result_text.value = "Erro ao cadastrar a tarefa."  # Mensagem de erro
     
     # Atualiza o texto na tela
     result_text.update()
 
+
+# Função para listar todas as tarefas
 def on_listar_tarefas_click(e, tarefas_column):
     # Atualiza a lista de tarefas na tela
     atualizar_lista_tarefas(tarefas_column)

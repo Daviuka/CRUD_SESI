@@ -2,7 +2,7 @@ from models.tarefa_model import Tarefa
 from sqlalchemy.exc import SQLAlchemyError
 from connection import get_session
 
-
+# Função para cadastrar uma nova tarefa no banco de dados
 def cadastrar_tarefa(descricao: str, situacao: bool):
     try:
         # Criar uma nova instância do modelo Tarefa com os dados fornecidos
@@ -16,10 +16,11 @@ def cadastrar_tarefa(descricao: str, situacao: bool):
             # Retorna o objeto Tarefa inserido
             return nova_tarefa
     except SQLAlchemyError as e:
+        # Exibe uma mensagem de erro caso ocorra algum problema
         print(f"Erro ao cadastrar tarefa: {e}")
         return None
 
-
+# Função para listar todas as tarefas do banco de dados
 def listar_tarefas():
     try:
         Session = get_session()
@@ -28,10 +29,11 @@ def listar_tarefas():
             tarefas = session.query(Tarefa).all()
             return tarefas
     except SQLAlchemyError as e:
+        # Exibe uma mensagem de erro caso ocorra algum problema
         print(f"Erro ao listar tarefas: {e}")
         return None
 
-
+# Função para listar uma tarefa específica por ID
 def listar_tarefa_por_id(tarefa_id: int):
     try:
         Session = get_session()
@@ -40,10 +42,11 @@ def listar_tarefa_por_id(tarefa_id: int):
             tarefa = session.query(Tarefa).filter(Tarefa.id == tarefa_id).first()
             return tarefa
     except SQLAlchemyError as e:
+        # Exibe uma mensagem de erro caso ocorra algum problema
         print(f"Erro ao listar tarefa por ID: {e}")
         return None
 
-
+# Função para editar uma tarefa existente no banco de dados
 def editar_tarefa(tarefa_id: int, descricao: str, situacao: bool):
     try:
         Session = get_session()
@@ -63,13 +66,15 @@ def editar_tarefa(tarefa_id: int, descricao: str, situacao: bool):
                 # Retorna a tarefa editada
                 return tarefa
             else:
+                # Exibe uma mensagem caso a tarefa não seja encontrada
                 print("Tarefa não encontrada")
                 return None
     except SQLAlchemyError as e:
+        # Exibe uma mensagem de erro caso ocorra algum problema
         print(f"Erro ao editar tarefa: {e}")
         return None
 
-
+# Função para remover uma tarefa do banco de dados
 def remover_tarefa(tarefa_id: int):
     try:
         Session = get_session()
@@ -87,10 +92,10 @@ def remover_tarefa(tarefa_id: int):
                 print("Tarefa removida com sucesso")
                 return True
             else:
+                # Exibe uma mensagem caso a tarefa não seja encontrada
                 print("Tarefa não encontrada")
                 return False
     except SQLAlchemyError as e:
+        # Exibe uma mensagem de erro caso ocorra algum problema
         print(f"Erro ao remover tarefa: {e}")
         return False
-    
-    
