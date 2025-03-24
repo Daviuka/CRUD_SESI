@@ -27,15 +27,15 @@ class Task(ft.Row):
         ]  # Componentes visuais da tarefa
 
     # Função para habilitar o modo de edição
-    def edit(page,self, e):
+    def edit(self, e):
         self.edit_button.visible = False  # Esconde o botão de edição
         self.save_button.visible = True  # Mostra o botão de salvar
         self.text_view.visible = False  # Esconde o texto da tarefa
         self.text_edit.visible = True  # Mostra o campo de edição
-        page.update()  # Atualiza a interface
+        self.update()  # Atualiza a interface
 
     # Função para salvar as alterações feitas na tarefa
-    def save(page,self, e):
+    def save(self, e):
         self.edit_button.visible = True  # Mostra o botão de edição
         self.save_button.visible = False  # Esconde o botão de salvar
         self.text_view.visible = True  # Mostra o texto da tarefa
@@ -44,7 +44,7 @@ class Task(ft.Row):
         # Aqui você pode chamar um serviço para atualizar a tarefa no banco de dados
         # Exemplo: editar_tarefa(self.tarefa_id, self.text_edit.value, self.checkbox.value)
         self.atualizar_lista()  # Atualiza a lista de tarefas
-        page.update()  # Atualiza a interface
+        self.update()  # Atualiza a interface
 
     # Função para remover a tarefa
     def delete_clicked(self, e):
