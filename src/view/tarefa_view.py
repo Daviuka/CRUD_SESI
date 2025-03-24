@@ -1,31 +1,52 @@
+from services.tarefa_services import cadastrar_tarefa
 import flet as ft
-from services.tarefa_services import criar_tarefa, atualizar_tarefa
-from src.connection import Session, engine
-from models.tarefa_model import Tarefa
+from sqlalchemy.orm import sessionmaker
+from connection import Session
+from models.tarefa_model import Tarefa  # Ajuste de import, caso o seu modelo esteja em models.py
 
-def tarefa_view(page, tarefa_id=None):
-    db = Session(bind=engine)
+# Função para atualizar a lista de tarefas
+def atualizar_lista_tarefas(tarefas_column):
+    # Criação de uma nova sessão para pegar as tarefas
+    session = Session()
     
-    descricao = ft.TextField(label="Descrição da tarefa")
-    situacao = ft.Dropdown(options=["Pendente", "Concluída"], label="Situação")
+    try:
+        # Limpa a coluna de tarefas
+        tarefas_column.controls.clear()
 
-    if tarefa_id:
-        tarefa = db.query(Tarefa).filter(Tarefa.id == tarefa_id).first()
-        if tarefa:
-            descricao.value = tarefa.descricao
-            situacao.value = tarefa.situacao
+        # Busca todas as tarefas no banco de dados
+        todas_tarefas = session.query(Tarefa).all()
 
-    def salvar(event):
-        if tarefa_id:
-            tarefa_atualizada = atualizar_tarefa(db, tarefa_id, descricao.value, situacao.value)
-            page.add(ft.Text(f"Tarefa {tarefa_atualizada.id} atualizada"))
-        else:
-            nova_tarefa = criar_tarefa(db, descricao.value, situacao.value)
-            page.add(ft.Text(f"Tarefa {nova_tarefa.id} criada"))
-        
-        page.update()
+        # Adiciona cada tarefa à coluna de tarefas
+        for tarefa in todas_tarefas:
+            tarefas_column.controls.append(
+                ft.Row(
+                    [
+                        ft.Text(f"ID: {tarefa.id} - Descrição: {tarefa.descricao} - Concluída: {'Sim' if tarefa.situacao else 'Não'}")
+                    ]
+                )
+            )
+
+        # Atualiza a tela com as novas tarefas
+        tarefas_column.update()
+
+    finally:
+        # Fechar a sessão após o processo
+        session.close()
+
+
+def on_add_tarefa_click(e, descricao_input, situacao_input, result_text, tarefas_column):
+    descricao = descricao_input.value
+    situacao = situacao_input.value
     
-    page.add(descricao, situacao, ft.ElevatedButton("Salvar", on_click=salvar))
+    # Chama a função de cadastro da tarefa
+    tarefa_cadastrada = cadastrar_tarefa(descricao, situacao)
     
-    db.close()
-
+    if tarefa_cadastrada:
+        result_text.value = f"Tarefa cadastrada com sucesso! ID: {tarefa_cadastrada.id}"
+        # Atualiza a lista de tarefas na tela
+        atualizar_lista_tarefas(tarefas_column)
+    else:
+        result_text.value = "Erro ao cadastrar a tarefa."
+    
+    # Atualiza o texto na tela
+    result_text.update()
