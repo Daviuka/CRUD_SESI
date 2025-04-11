@@ -68,3 +68,5 @@ def on_add_tarefa_click(e, descricao_input, situacao_input, result_text, tarefas
 def on_listar_tarefas_click(e, tarefas_column):
     # Atualiza a lista de tarefas na tela
     atualizar_lista_tarefas(tarefas_column)
+
+    
