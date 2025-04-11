@@ -86,12 +86,7 @@ class Task(ft.Row):
 
 # Função principal para configurar a interface
 def main(page: ft.Page):
-    titulo_principal = ft.Text(
-        'Cadastro de Tarefas',
-        size=24,
-        weight='bold',
-        font_family='Anton'
-    )
+    page.title = "Cadastro de Tarefa"  # Título da página
     page.scroll = 'adaptive'  # Habilita o scroll adaptativo
     page.padding = 20  # Define o padding da página
     page.vertical_alignment = ft.MainAxisAlignment.CENTER  # Alinha os elementos verticalmente ao centro
