@@ -41,20 +41,34 @@ class Task(ft.Row):
         self.text_view.visible = True  # Mostra o texto da tarefa
         self.text_edit.visible = False  # Esconde o campo de edição
         self.text_view.value = self.text_edit.value  # Atualiza o texto da tarefa com o valor editado
-        # Aqui você pode chamar um serviço para atualizar a tarefa no banco de dados
-        # Exemplo: editar_tarefa(self.tarefa_id, self.text_edit.value, self.checkbox.value)
         self.atualizar_lista()  # Atualiza a lista de tarefas
         self.update()  # Atualiza a interface
 
     # Função para remover a tarefa
     def delete_clicked(self, e):
-        # Chama o serviço para remover a tarefa
-        sucesso = remover_tarefa(self.tarefa_id)
+        sucesso = remover_tarefa(self.tarefa_id)  # Chama o serviço para remover a tarefa
         if sucesso:
             print(f"Tarefa {self.tarefa_id} removida com sucesso.")  # Mensagem de sucesso
             self.atualizar_lista()  # Atualiza a lista de tarefas
         else:
             print(f"Erro ao remover a tarefa {self.tarefa_id}.")  # Mensagem de erro
+
+# Função para abrir uma nova página
+def open_new_page(page: ft.Page):
+    def go_back(e):
+        page.views.pop()  # Remove a página atual
+        page.update()  # Atualiza a interface
+
+    # Define o conteúdo da nova página
+    new_page = ft.View(
+        "/new_page",
+        [
+            ft.Text("Bem-vindo à nova página!", size=20),
+            ft.ElevatedButton("Voltar", on_click=go_back),  # Botão para voltar à página principal
+        ],
+    )
+    page.views.append(new_page)  # Adiciona a nova página à pilha de visualizações
+    page.update()  # Atualiza a interface
 
 # Função principal para configurar a interface
 def main(page: ft.Page):
@@ -62,6 +76,19 @@ def main(page: ft.Page):
     page.scroll = 'adaptive'  # Habilita o scroll adaptativo
     page.padding = 20  # Define o padding da página
     page.vertical_alignment = ft.MainAxisAlignment.CENTER  # Alinha os elementos verticalmente ao centro
+
+    # Adiciona o NavigationBar à página
+    page.navigation_bar = ft.NavigationBar(
+        destinations=[
+            ft.NavigationBarDestination(icon=ft.icons.EXPLORE, label="Explore"),
+            ft.NavigationBarDestination(icon=ft.icons.COMMUTE, label="Commute"),
+            ft.NavigationBarDestination(
+                icon=ft.icons.BOOKMARK_BORDER,
+                selected_icon=ft.icons.BOOKMARK,
+                label="Bookmarks",
+            ),
+        ]
+    )
 
     # Função para adicionar uma nova tarefa
     def on_add_tarefa_click(e):

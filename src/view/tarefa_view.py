@@ -19,10 +19,21 @@ def atualizar_lista_tarefas(tarefas_column):
         for tarefa in todas_tarefas:
             tarefas_column.controls.append(
                 ft.Row(
-                    [
-                        # Exibe o ID, descrição e status (Concluída ou Não) de cada tarefa
-                        ft.Text(f"ID: {tarefa.id} - Descrição: {tarefa.descricao} - Concluída: {'Sim' if tarefa.situacao else 'Não'}")
-                    ]
+                    controls=[
+                        ft.Text(f"ID: {tarefa.id}", weight="bold", size=14),  # Exibe o ID da tarefa
+                        ft.Text(
+                            f"Descrição: {tarefa.descricao}",
+                            size=14,
+                            expand=True,  # Faz a descrição ocupar o espaço disponível
+                            no_wrap=False,  # Permite que o texto quebre em várias linhas
+                        ),
+                        ft.Text(
+                            f"Concluída: {'Sim' if tarefa.situacao else 'Não'}",
+                            size=14,
+                            weight="bold",
+                        ),
+                    ],
+                    alignment="spaceBetween",  # Ajusta o alinhamento dos itens
                 )
             )
 

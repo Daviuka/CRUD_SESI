@@ -1,6 +1,24 @@
 from models.tarefa_model import Tarefa
 from sqlalchemy.exc import SQLAlchemyError
 from connection import get_session
+import flet as ft
+
+# Classe para criar um NavigationBar adaptável
+class AdaptiveNavigationBarDestination(ft.NavigationBarDestination):
+    def __init__(self, ios_icon, android_icon, label):
+        super().__init__()
+        self._ios_icon = ios_icon  # Ícone para iOS
+        self._android_icon = android_icon  # Ícone para Android
+        self.label = label  # Rótulo do NavigationBar
+
+    def build(self):
+        # Define o ícone com base na plataforma (iOS ou Android)
+        self.icon = (
+            self._ios_icon
+            if self.page.platform == ft.PagePlatform.IOS
+            or self.page.platform == ft.PagePlatform.MACOS
+            else self._android_icon
+        )
 
 # Função para cadastrar uma nova tarefa no banco de dados
 def cadastrar_tarefa(descricao: str, situacao: bool):
