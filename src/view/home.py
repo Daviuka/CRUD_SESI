@@ -1,191 +1,185 @@
 import flet as ft
-from services.tarefa_services import cadastrar_tarefa, listar_tarefas, remover_tarefa
+from services.tarefa_services import cadastrar_tarefa, listar_tarefas, remover_tarefa, editar_tarefa
 
 # Classe para representar uma tarefa com funcionalidade de edição e remoção
 class Task(ft.Row):
     def __init__(self, tarefa_id, text, situacao, atualizar_lista):
         super().__init__()
-         # ID da tarefa
-        self.tarefa_id = tarefa_id 
-        self.text_view = ft.Text(
-            text,
-            # Faz a descrição ocupar o espaço disponível
-            expand=True, 
-            # Permite que o texto quebre em várias linhas 
-            no_wrap=False,  
-            # Define o tamanho da fonte
-            size=14  
-        )
-        # Campo de edição do texto
-        self.text_edit = ft.TextField(value=text, visible=False) 
-        # Checkbox para marcar a tarefa como concluída 
-        self.checkbox = ft.Checkbox(value=situacao) 
+        self.tarefa_id = tarefa_id
+        self.atualizar_lista = atualizar_lista
+        self.texto_original = text
 
-        # Botão para salvar a edição
-        self.edit_button = ft.IconButton(icon=ft.icons.EDIT, on_click=self.edit)  
-        self.save_button = ft.IconButton(
-            visible=False, icon=ft.icons.SAVE, on_click=self.save  
-        )
-        # Botão para remover a tarefa
-        self.delete_button = ft.IconButton(
-            icon=ft.icons.DELETE, on_click=self.delete_clicked  
-        )
-        # Função para atualizar a lista de tarefas
-        self.atualizar_lista = atualizar_lista  
+        self.checkbox = ft.Checkbox(value=situacao)
+        self.text_view = ft.Text(text, expand=True)
+        self.text_edit = ft.TextField(value=text, visible=False, expand=True)
+
+        self.btn_editar = ft.IconButton(icon=ft.icons.EDIT, tooltip="Editar", on_click=self.toggle_edit)
+        self.btn_salvar = ft.IconButton(icon=ft.icons.SAVE, tooltip="Salvar", visible=False, on_click=self.salvar_edicao)
+
+
         self.controls = [
-            # Componentes visuais da tarefa
             self.checkbox,
             self.text_view,
             self.text_edit,
-            self.edit_button,
-            self.save_button,
-            self.delete_button,
-        ]  
-    # Função para habilitar o modo de edição
-    def edit(self, e):
-        # Esconde o botão de edição
-        self.edit_button.visible = False
-        # Mostra o botão de salvar  
-        self.save_button.visible = True  
-        # Esconde o texto da tarefa
-        self.text_view.visible = False  
-        # Mostra o campo de edição
-        self.text_edit.visible = True  
-        # Atualiza a interface
-        self.update()  
+            self.btn_editar,
+            self.btn_salvar,
+        ]
 
-    # Função para salvar as alterações feitas na tarefa
-    def save(self, e):
-        # Mostra o botão de edição  
-        self.edit_button.visible = True 
-        # Esconde o botão de salvar
-        self.save_button.visible = False 
-        # Mostra o texto da tarefa
-        self.text_view.visible = True  
-        # Esconde o campo de edição
-        self.text_edit.visible = False  
-        # Atualiza o texto da tarefa com o valor editado
-        self.text_view.value = self.text_edit.value  
-        # Atualiza a lista de tarefas
-        self.atualizar_lista() 
-        # Atualiza a interface
-        self.update()  
+    def toggle_edit(self, e):
+        self.text_view.visible = False
+        self.text_edit.visible = True
+        self.btn_editar.visible = False
+        self.btn_salvar.visible = True
+        self.update()
 
-    # Função para remover a tarefa
-    def delete_clicked(self, e):
-        # Chama o serviço para remover a tarefa
-        sucesso = remover_tarefa(self.tarefa_id)
-        if sucesso:
-            # Mensagem de sucesso
-            print(f"Tarefa {self.tarefa_id} removida com sucesso.") 
-            # Atualiza a lista de tarefas
-            self.atualizar_lista()  
-        else:
-            # Mensagem de erro
-            print(f"Erro ao remover a tarefa {self.tarefa_id}.")
+    def salvar_edicao(self, e):
+        novo_texto = self.text_edit.value.strip()
+        if novo_texto and novo_texto != self.texto_original:
+            editar_tarefa(self.tarefa_id, novo_texto, self.checkbox.value)
+            self.texto_original = novo_texto
+        self.text_view.value = self.texto_original
+        self.text_view.visible = True
+        self.text_edit.visible = False
+        self.btn_editar.visible = True
+        self.btn_salvar.visible = False
+        self.atualizar_lista()
 
-# Função principal para configurar a interface
+
+
+# Função principal
 def main(page: ft.Page):
-    page.title = "Cadastro de Tarefa"  # Título da página
-    page.scroll = 'adaptive'  # Habilita o scroll adaptativo
-    page.padding = 20  # Define o padding da página
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER  # Alinha os elementos verticalmente ao centro
+    page.title = "Task of Lord"
+    page.theme = ft.Theme(font_family="lord_ring")
+    page.window.width = 450
+    page.window.height = 800
+    page.fonts = {
+        "lord_ring": 'fonts/ringbearer/RINGM___.TTF',
+        "soloist": 'fonts/soloist/soloistacad.ttf',
+    }
 
-    
-    # Função para adicionar uma nova tarefa
-    def on_add_tarefa_click(e):
-        descricao = descricao_input.value.strip()  # Obtém o valor do campo de descrição
-        situacao = situacao_input.value  # Obtém o valor do checkbox
+    def sair_do_aplicativo(e):
+        page.window.destroy()
 
-        if not descricao:  # Verifica se a descrição está vazia
-            result_text.value = "A descrição da tarefa não pode estar vazia."  # Mensagem de erro
-            result_text.color = "red"  # Define a cor da mensagem como vermelha
-            page.update()  # Atualiza a interface
-            return
+    # Views
+    resultado = ft.Text()
+    descricao_input = ft.TextField(label="Descrição da Tarefa", autofocus=True, width=300)
+    situacao_input = ft.Checkbox(label="Tarefa concluída", value=False)
+    tarefas_column = ft.Column()
+    tarefas_feito_desfeito_column = ft.Column()
 
-        # Chama o serviço para cadastrar a tarefa
-        nova_tarefa = cadastrar_tarefa(descricao, situacao)
-        if nova_tarefa:  # Verifica se a tarefa foi cadastrada com sucesso
-            result_text.value = "Tarefa cadastrada com sucesso!"  # Mensagem de sucesso
-            result_text.color = "green"  # Define a cor da mensagem como verde
-            descricao_input.value = ""  # Limpa o campo de descrição
-            situacao_input.value = False  # Reseta o checkbox
-            atualizar_lista_tarefas()  # Atualiza a lista de tarefas
-        else:
-            result_text.value = "Erro ao cadastrar a tarefa."  # Mensagem de erro
-            result_text.color = "red"  # Define a cor da mensagem como vermelha
-
-        page.update()  # Atualiza a interface
-
-    # Função para atualizar a lista de tarefas
-    def atualizar_lista_tarefas():
-        tarefas_column.controls.clear()  # Limpa a coluna de tarefas
-        tarefas = listar_tarefas()  # Obtém a lista de tarefas do banco de dados
-        if tarefas:  # Verifica se existem tarefas
+    def atualizar_lista_cadastrar():
+        tarefas_column.controls.clear()
+        tarefas = listar_tarefas()
+        if tarefas:
             for tarefa in tarefas:
-                tarefas_column.controls.append(
-                    Task(
-                        tarefa_id=tarefa.id,
-                        text=tarefa.descricao,
-                        situacao=tarefa.situacao,
-                        atualizar_lista=atualizar_lista_tarefas,
-                    )
-                )  # Adiciona cada tarefa à coluna
+                tarefas_column.controls.append(Task(
+                    tarefa_id=tarefa.id,
+                    text=tarefa.descricao,
+                    situacao=tarefa.situacao,
+                    atualizar_lista=atualizar_lista_cadastrar
+                ))
         else:
-            tarefas_column.controls.append(ft.Text("Nenhuma tarefa encontrada."))  # Mensagem caso não existam tarefas
-
-        page.update()  # Atualiza a interface
-
-    def alterar_tema(e):
-        if page.theme_mode == ft.ThemeMode.DARK:
-            page.theme_mode = ft.ThemeMode.LIGHT
-            btn_tema.icon = ft.icons.NIGHTS_STAY_OUTLINED
-            btn_tema.tooltip = 'Alterar para tema escuro!'
-            page.bgcolor = ft.colors.WHITE
-        else:
-            page.theme_mode = ft.ThemeMode.DARK
-            btn_tema.icon = ft.icons.WB_SUNNY_OUTLINED
-            btn_tema.tooltip = 'Alterar para o tema claro!'
-            page.bgcolor = ft.colors.BLACK
+            tarefas_column.controls.append(ft.Text("Nenhuma tarefa encontrada."))
         page.update()
 
-    # Botão para alternar o tema
-    btn_tema = ft.IconButton(
-        icon=ft.icons.WB_SUNNY_OUTLINED,
-        tooltip='Alterar o tema',
-        on_click=alterar_tema
+    def atualizar_lista_feito_desfeito():
+        tarefas_feito_desfeito_column.controls.clear()
+        tarefas = listar_tarefas()
+        if tarefas:
+            feitas = [t for t in tarefas if t.situacao]
+            nao_feitas = [t for t in tarefas if not t.situacao]
+
+            tarefas_feito_desfeito_column.controls.append(ft.Text("Tarefas Feitas", size=20))
+            for tarefa in feitas:
+                tarefas_feito_desfeito_column.controls.append(Task(
+                    tarefa_id=tarefa.id,
+                    text=tarefa.descricao,
+                    situacao=tarefa.situacao,
+                    atualizar_lista=atualizar_lista_feito_desfeito
+                ))
+
+            tarefas_feito_desfeito_column.controls.append(ft.Text("Tarefas Não Feitas", size=20))
+            for tarefa in nao_feitas:
+                tarefas_feito_desfeito_column.controls.append(Task(
+                    tarefa_id=tarefa.id,
+                    text=tarefa.descricao,
+                    situacao=tarefa.situacao,
+                    atualizar_lista=atualizar_lista_feito_desfeito
+                ))
+        else:
+            tarefas_feito_desfeito_column.controls.append(ft.Text("Nenhuma tarefa encontrada."))
+        page.update()
+
+    def on_add_tarefa_click(e):
+        descricao = descricao_input.value.strip()
+        situacao = situacao_input.value
+
+        if not descricao:
+            resultado.value = "A descrição da tarefa não pode estar vazia."
+            resultado.color = "red"
+        else:
+            nova_tarefa = cadastrar_tarefa(descricao, situacao)
+            if nova_tarefa:
+                resultado.value = "Tarefa cadastrada com sucesso!"
+                resultado.color = "green"
+                descricao_input.value = ""
+                situacao_input.value = False
+            else:
+                resultado.value = "Erro ao cadastrar a tarefa."
+                resultado.color = "red"
+        atualizar_lista_cadastrar()
+        page.update()
+
+    def remover_tarefas_selecionadas(e):
+        for tarefa in tarefas_column.controls[:]:
+            if isinstance(tarefa, Task) and tarefa.checkbox.value:
+                remover_tarefa(tarefa.tarefa_id)
+        atualizar_lista_cadastrar()
+
+    # Views
+    cadastrar_view = ft.Column([
+        ft.Row([ft.Text("Gerenciador de Tarefas", size=35, font_family="lord_ring", color=ft.colors.YELLOW_ACCENT)],
+               alignment=ft.MainAxisAlignment.CENTER),
+        descricao_input,
+        situacao_input,
+        ft.Row([
+            ft.ElevatedButton("Cadastrar", on_click=on_add_tarefa_click),
+            ft.ElevatedButton("Remover Selecionadas", icon=ft.icons.DELETE, on_click=remover_tarefas_selecionadas)
+        ]),
+        resultado,
+        tarefas_column,
+        ft.ElevatedButton(text="Sair", icon=ft.icons.EXIT_TO_APP, on_click=sair_do_aplicativo),
+    ])
+
+    feito_desfeito_view = ft.Column([
+        ft.Row([ft.Text("Feito e Desfeito", size=35, font_family="lord_ring", color=ft.colors.YELLOW_ACCENT)],
+               alignment=ft.MainAxisAlignment.CENTER),
+        tarefas_feito_desfeito_column,
+        ft.ElevatedButton(text="Sair", icon=ft.icons.EXIT_TO_APP, on_click=sair_do_aplicativo),
+    ])
+
+    content_container = ft.Container(content=cadastrar_view)
+
+    # Navegação
+    def on_nav_change(e):
+        if nav_bar.selected_index == 0:
+            content_container.content = cadastrar_view
+            atualizar_lista_cadastrar()
+        elif nav_bar.selected_index == 1:
+            content_container.content = feito_desfeito_view
+            atualizar_lista_feito_desfeito()
+        page.update()
+
+    nav_bar = ft.NavigationBar(
+        destinations=[
+            ft.NavigationBarDestination(icon=ft.icons.TASK_OUTLINED, label="Cadastrar Tarefa"),
+            ft.NavigationBarDestination(icon=ft.icons.TASK_ALT_OUTLINED, label="Feito e Desfeito"),
+        ],
+        selected_index=0,
+        on_change=on_nav_change
     )
 
-    # Campo de entrada para a descrição da tarefa
-    descricao_input = ft.TextField(label="Descrição da Tarefa", autofocus=True, width=300)
-
-    # Campo de entrada para a situação (Checkbox)
-    situacao_input = ft.Checkbox(label="Tarefa concluída", value=False)
-
-    # Botão para adicionar a tarefa
-    add_button = ft.ElevatedButton("Cadastrar Tarefa", on_click=on_add_tarefa_click)
-
-    # Área de resultado (onde será mostrado se a tarefa foi cadastrada ou não)
-    result_text = ft.Text()
-
-    # Coluna para exibir a lista de tarefas
-    tarefas_column = ft.Column()
-
-    # Adiciona todos os componentes na página
-    page.add(
-        ft.Column([
-            ft.Row(
-                [btn_tema],  # Adiciona o botão de tema
-                alignment=ft.MainAxisAlignment.END  # Alinha o botão ao lado direito
-            ),
-            ft.Column([
-                descricao_input,
-                situacao_input,
-                add_button,
-                result_text,
-                tarefas_column
-            ])
-        ])
-    )
-    # Inicializa a lista de tarefas
-    atualizar_lista_tarefas()
+    # Layout final
+    page.navigation_bar = nav_bar
+    page.add(content_container)
+    atualizar_lista_cadastrar()

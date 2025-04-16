@@ -3,23 +3,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from connection import get_session
 import flet as ft
 
-# Classe para criar um NavigationBar adaptável
-class AdaptiveNavigationBarDestination(ft.NavigationBarDestination):
-    def __init__(self, ios_icon, android_icon, label):
-        super().__init__()
-        self._ios_icon = ios_icon  # Ícone para iOS
-        self._android_icon = android_icon  # Ícone para Android
-        self.label = label  # Rótulo do NavigationBar
 
-    def build(self):
-        # Define o ícone com base na plataforma (iOS ou Android)
-        self.icon = (
-            self._ios_icon
-            if self.page.platform == ft.PagePlatform.IOS
-            or self.page.platform == ft.PagePlatform.MACOS
-            else self._android_icon
-        )
-
+Session = get_session()
+with Session() as session:
+    todas_tarefas = session.query(Tarefa).all()
+    
 # Função para cadastrar uma nova tarefa no banco de dados
 def cadastrar_tarefa(descricao: str, situacao: bool):
     try:
@@ -51,18 +39,6 @@ def listar_tarefas():
         print(f"Erro ao listar tarefas: {e}")
         return None
 
-# Função para listar uma tarefa específica por ID
-def listar_tarefa_por_id(tarefa_id: int):
-    try:
-        Session = get_session()
-        with Session() as session:
-            # Buscar a tarefa específica por ID no banco de dados
-            tarefa = session.query(Tarefa).filter(Tarefa.id == tarefa_id).first()
-            return tarefa
-    except SQLAlchemyError as e:
-        # Exibe uma mensagem de erro caso ocorra algum problema
-        print(f"Erro ao listar tarefa por ID: {e}")
-        return None
 
 # Função para editar uma tarefa existente no banco de dados
 def editar_tarefa(tarefa_id: int, descricao: str, situacao: bool):
@@ -117,3 +93,4 @@ def remover_tarefa(tarefa_id: int):
         # Exibe uma mensagem de erro caso ocorra algum problema
         print(f"Erro ao remover tarefa: {e}")
         return False
+    
