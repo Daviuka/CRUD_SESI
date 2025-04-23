@@ -5,26 +5,18 @@ from services.tarefa_services import cadastrar_tarefa, listar_tarefas, remover_t
 class Task(ft.Row):
     def __init__(self, tarefa_id, text, situacao, atualizar_lista):
         super().__init__()
-        self.tarefa_id = tarefa_id  # ID da tarefa
-        self.atualizar_lista = atualizar_lista  # Função para atualizar a lista de tarefas
-        self.texto_original = text  # Texto original da tarefa
+        self.tarefa_id = tarefa_id
+        self.atualizar_lista = atualizar_lista
+        self.texto_original = text
 
-        # Checkbox para marcar a tarefa como concluída ou não
-        self.checkbox = ft.Checkbox(value=situacao)
-
-        # Exibição do texto da tarefa
+        self.checkbox = ft.Checkbox(
+            label="", value=situacao, fill_color=ft.Colors.GREEN_100
+        )
         self.text_view = ft.Text(text, expand=True)
-
-        # Campo de edição do texto da tarefa
         self.text_edit = ft.TextField(value=text, visible=False, expand=True)
-
-        # Botão para editar a tarefa
         self.btn_editar = ft.IconButton(icon=ft.icons.EDIT, tooltip="Editar", on_click=self.toggle_edit)
-
-        # Botão para salvar as alterações feitas na tarefa
         self.btn_salvar = ft.IconButton(icon=ft.icons.SAVE, tooltip="Salvar", visible=False, on_click=self.salvar_edicao)
 
-        # Controles que compõem a tarefa
         self.controls = [
             self.checkbox,
             self.text_view,
@@ -33,7 +25,6 @@ class Task(ft.Row):
             self.btn_salvar,
         ]
 
-    # Alterna entre o modo de exibição e o modo de edição
     def toggle_edit(self, e):
         self.text_view.visible = False
         self.text_edit.visible = True
@@ -41,7 +32,6 @@ class Task(ft.Row):
         self.btn_salvar.visible = True
         self.update()
 
-    # Salva as alterações feitas na tarefa
     def salvar_edicao(self, e):
         novo_texto = self.text_edit.value.strip()
         if novo_texto and novo_texto != self.texto_original:
@@ -54,167 +44,146 @@ class Task(ft.Row):
         self.btn_salvar.visible = False
         self.atualizar_lista()
 
-# Função principal que configura a interface do aplicativo
+
 def main(page: ft.Page):
-    # Configurações iniciais da página
-    page.title = "Task of Lord"  # Título da janela
-    page.theme = ft.Theme(font_family="lord_ring")  # Tema com fonte personalizada
-    page.window.width = 450  # Largura da janela
-    page.window.height = 800  # Altura da janela
-    img = ft.Image(
-        src='assets/img/lord_rings.png',
-        width=200,
-        height=200,
-        expand=True,
+    page.title = "Task of Lord"
+    page.bgcolor = ft.Colors.BLACK
+    page.scroll = "adaptive"
+    page.window.width = 450
+    page.window.height = 800
+
+    # Mantém a fonte personalizada
+    page.fonts = {
+        "lord_ring": 'fonts/ringbearer/RINGM___.TTF',
+        "soloist": 'fonts/soloist/soloistacad.ttf',
+    }
+    page.theme = ft.Theme(
+        text_theme=ft.TextTheme(
+            title_large=ft.TextStyle(
+                font_family="lord_ring",
+                weight=ft.FontWeight.BOLD,
+                italic=True
+            )
+        )
+    )
+    page.theme_mode = ft.ThemeMode.DARK
+
+    # Título
+    titulo = ft.Text(
+        "Gerenciador de Tarefas",
+        size=40,
+        font_family="lord_ring",
+        text_align="center",
+        italic=True,
+        weight=ft.FontWeight.BOLD,
+        color=ft.Colors.AMBER_500,
+        expand=True
     )
 
-    page.fonts = {
-        "lord_ring": 'fonts/ringbearer/RINGM___.TTF',  # Fonte personalizada para o título
-        "soloist": 'fonts/soloist/soloistacad.ttf',  # Fonte personalizada para outros textos
-    }
+    # Inputs e botões
+    descricao_input = ft.TextField(
+        label="Descrição da Tarefa",
+        label_style=ft.TextStyle(color=ft.Colors.AMBER_500),
+        autofocus=True,
+        expand=True,
+        bgcolor=ft.Colors.BLACK,
+        color=ft.Colors.WHITE,
+        border_color=ft.Colors.YELLOW_ACCENT_400,
+        text_style=ft.TextStyle(color=ft.Colors.YELLOW_ACCENT_700),
+        max_length=80
+    )
+    situacao_input = ft.Checkbox(
+        label="Tarefa concluída", value=False,
+        fill_color=ft.Colors.GREEN_100,
+        label_style=ft.TextStyle(color=ft.Colors.YELLOW_ACCENT_400)
+    )
+    result_text = ft.Text(color=ft.Colors.AMBER_500)
+    result_container = ft.Container(
+        content=result_text,
+        bgcolor=ft.Colors.WHITE,
+        opacity=0.5,
+        padding=ft.Padding(10,10,10,10)
+    )
 
-    # Função para fechar o aplicativo
-    def sair_do_aplicativo(e):
-        page.window.destroy()
+    tarefas_column = ft.Column(
+        scroll=ft.ScrollMode.AUTO,
+        expand=True,
+        alignment=ft.MainAxisAlignment.START,
+        horizontal_alignment=ft.CrossAxisAlignment.STRETCH
+    )
 
-    # Componentes da view "Cadastrar Tarefa"
-
-    # Texto para exibir mensagens de sucesso ou erro
-    resultado = ft.Text()
-    # Campo de entrada para a descrição da tarefa
-    descricao_input = ft.TextField(label="Descrição da Tarefa", autofocus=True, width=300)  
-    # Checkbox para marcar a tarefa como concluída
-    situacao_input = ft.Checkbox(label="Tarefa concluída", value=False)  
-    # Coluna para exibir a lista de tarefas
-    tarefas_column = ft.Column() 
-    # Coluna para exibir tarefas feitas e não feitas
-    tarefas_feito_desfeito_column = ft.Column()  
-
-    # Atualiza a lista de tarefas na view "Cadastrar Tarefa"
-    def atualizar_lista_cadastrar():
+    def atualizar_lista():
         tarefas_column.controls.clear()
         tarefas = listar_tarefas()
         if tarefas:
-            for tarefa in tarefas:
-                tarefas_column.controls.append(Task(
-                    tarefa_id=tarefa.id,
-                    text=tarefa.descricao,
-                    situacao=tarefa.situacao,
-                    atualizar_lista=atualizar_lista_cadastrar
-                ))
+            for t in tarefas:
+                tarefas_column.controls.append(
+                    Task(t.id, t.descricao, t.situacao, atualizar_lista)
+                )
         else:
-            tarefas_column.controls.append(ft.Text("Nenhuma tarefa encontrada."))
+            tarefas_column.controls.append(ft.Text("Nenhuma tarefa encontrada.", color=ft.Colors.AMBER_500))
         page.update()
 
-    # Atualiza a lista de tarefas na view "Feito e Desfeito"
-    def atualizar_lista_feito_desfeito():
-        tarefas_feito_desfeito_column.controls.clear()
-        tarefas = listar_tarefas()
-        if tarefas:
-            feitas = [t for t in tarefas if t.situacao]
-            nao_feitas = [t for t in tarefas if not t.situacao]
-
-            # Adiciona as tarefas feitas
-            tarefas_feito_desfeito_column.controls.append(ft.Text("Tarefas Feitas", size=20))
-            for tarefa in feitas:
-                tarefas_feito_desfeito_column.controls.append(Task(
-                    tarefa_id=tarefa.id,
-                    text=tarefa.descricao,
-                    situacao=tarefa.situacao,
-                    atualizar_lista=atualizar_lista_feito_desfeito
-                ))
-
-            # Adiciona as tarefas não feitas
-            tarefas_feito_desfeito_column.controls.append(ft.Text("Tarefas Não Feitas", size=20))
-            for tarefa in nao_feitas:
-                tarefas_feito_desfeito_column.controls.append(Task(
-                    tarefa_id=tarefa.id,
-                    text=tarefa.descricao,
-                    situacao=tarefa.situacao,
-                    atualizar_lista=atualizar_lista_feito_desfeito
-                ))
+    def on_add(e):
+        desc = descricao_input.value.strip()
+        if not desc:
+            result_text.value = "A descrição não pode estar vazia"
         else:
-            tarefas_feito_desfeito_column.controls.append(ft.Text("Nenhuma tarefa encontrada."))
+            novo = cadastrar_tarefa(desc, situacao_input.value)
+            result_text.value = "Tarefa cadastrada!" if novo else "Erro ao cadastrar"
+            descricao_input.value = ""
+            situacao_input.value = False
+        atualizar_lista()
         page.update()
 
-    # Função para adicionar uma nova tarefa
-    def on_add_tarefa_click(e):
-        descricao = descricao_input.value.strip()
-        situacao = situacao_input.value
-
-        if not descricao:
-            resultado.value = "A descrição da tarefa não pode estar vazia."
-            resultado.color = "red"
-        else:
-            nova_tarefa = cadastrar_tarefa(descricao, situacao)
-            if nova_tarefa:
-                resultado.value = "Tarefa cadastrada com sucesso!"
-                resultado.color = "green"
-                descricao_input.value = ""
-                situacao_input.value = False
-            else:
-                resultado.value = "Erro ao cadastrar a tarefa."
-                resultado.color = "red"
-        atualizar_lista_cadastrar()
-        page.update()
-
-    # Função para remover tarefas selecionadas
-    def remover_tarefas_selecionadas(e):
-        for tarefa in tarefas_column.controls[:]:
-            if isinstance(tarefa, Task) and tarefa.checkbox.value:
-                remover_tarefa(tarefa.tarefa_id)
-        atualizar_lista_cadastrar()
-
-    # View "Cadastrar Tarefa"
-    cadastrar_view = ft.Column([
-        ft.Row([ft.Text("Gerenciador de Tarefas", size=35, font_family="lord_ring", color=ft.colors.YELLOW_ACCENT)],
-               alignment=ft.MainAxisAlignment.CENTER),
-        descricao_input,
-        situacao_input, 
-        ft.Row([
-            ft.ElevatedButton("Cadastrar", on_click=on_add_tarefa_click),
-            ft.ElevatedButton("Remover Selecionadas", icon=ft.icons.DELETE, on_click=remover_tarefas_selecionadas)
-        ]),
-        resultado,
-        tarefas_column,
-        ft.ElevatedButton(text="Sair", icon=ft.icons.EXIT_TO_APP, on_click=sair_do_aplicativo),
-        img
-        
-    ])
-
-    # View "Feito e Desfeito"
-    feito_desfeito_view = ft.Column([
-        ft.Row([ft.Text("Feito e Desfeito", size=35, font_family="lord_ring", color=ft.colors.YELLOW_ACCENT)],
-               alignment=ft.MainAxisAlignment.CENTER),
-        tarefas_feito_desfeito_column,
-        ft.ElevatedButton(text="Sair", icon=ft.icons.EXIT_TO_APP, on_click=sair_do_aplicativo),
-        img
-    ])
-
-    # Container principal para alternar entre as views
-    content_container = ft.Container(content=cadastrar_view)
-
-    # Função para alternar entre as views
-    def on_nav_change(e):
-        if nav_bar.selected_index == 0:
-            content_container.content = cadastrar_view
-            atualizar_lista_cadastrar()
-        elif nav_bar.selected_index == 1:
-            content_container.content = feito_desfeito_view
-            atualizar_lista_feito_desfeito()
-        page.update()
-
-    # NavigationBar para alternar entre as views
-    nav_bar = ft.NavigationBar(
-        destinations=[
-            ft.NavigationBarDestination(icon=ft.icons.TASK_OUTLINED, label="Cadastrar Tarefa"),
-            ft.NavigationBarDestination(icon=ft.icons.TASK_ALT_OUTLINED, label="Feito e Desfeito"),
-        ],
-        selected_index=0,
-        on_change=on_nav_change
+    add_button = ft.ElevatedButton(
+        "Cadastrar",
+        on_click=on_add,
+        color=ft.Colors.YELLOW,
+        bgcolor=ft.Colors.YELLOW_ACCENT_200,
+        opacity=0.8
     )
 
-    # Layout final da página
-    page.navigation_bar = nav_bar
-    page.add(content_container)
-    atualizar_lista_cadastrar()
+    # Botão de atualizar
+    refresh_button = ft.ElevatedButton(
+        "Atualizar",
+        on_click=lambda e: [atualizar_lista()],
+        color=ft.Colors.YELLOW,
+        bgcolor=ft.Colors.YELLOW_ACCENT_200,
+        opacity=0.8
+    )
+
+    # Imagem de fundo (mantém src e tamanho)
+    fundo = ft.Container(
+        content=ft.Image(
+            src='assets/img/lord_rings.png',
+            fit=ft.ImageFit.COVER,
+            width=page.width,
+            height=page.height
+        ),
+        expand=True,
+        opacity=0.2
+    )
+
+    # Conteúdo principal
+    conteudo = ft.Container(
+        content=ft.Column(
+            [
+                ft.Row([titulo], alignment=ft.MainAxisAlignment.CENTER),
+                descricao_input,
+                ft.Row([situacao_input, add_button], alignment=ft.MainAxisAlignment.START),
+                tarefas_column,
+                ft.Row([refresh_button], alignment=ft.MainAxisAlignment.CENTER),
+                result_container
+            ],
+            expand=True,
+            alignment=ft.MainAxisAlignment.START,
+            horizontal_alignment=ft.CrossAxisAlignment.START
+        ),
+        margin=ft.Margin(20,20,20,20)
+    )
+
+    page.add(ft.Stack(controls=[fundo, conteudo]))
+    page.on_resize = lambda e: (setattr(fundo.content, 'width', page.width), setattr(fundo.content, 'height', page.height), page.update())
+    atualizar_lista()
+
